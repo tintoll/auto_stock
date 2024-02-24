@@ -57,4 +57,22 @@ class Kiwoom(QAxWidget):
         self.dynamicCall("SetInputValue(String, String)", "조회구분", "2")
         self.dynamicCall("CommRqData(String, String, int, String)", "예수금상세현황요청", "opw00001", "0", "2000")
 
-        
+    def trdata_slot(self, sScrNo, sRQName, sTrCode, sRecordName, sPrevNext):
+        '''
+        TR 요청을 받는 구역, 슬롯이다.
+        :param sScrNo: 스크린번호
+        :param sRQName: 내가 요청햇을때 지은 이름
+        :param sTrCode: 요청 id, tr코드
+        :param sRecordName: 사용안함
+        :param sPrevNext: 다음 페이지가 있는지
+        :return:
+        '''
+        if sRQName == "예수금상세현황요청":
+            deposit = self.dynamicCall("GetCommData(String, String, int, STring)", sTrCode, sRQName, 0, "예수금")
+            print("예수금 %s" % deposit) # "000000010000000"
+            print("예수금 형변환 %s" % int(deposit)) # 10000000
+
+            ok_deposit = self.dynamicCall("GetCommData(String, String, int, STring)", sTrCode, sRQName, 0, "출금가능금액")
+            print("출금가능금액 %s" % ok_deposit)
+            print("출금가능금액 형변환 %s" % int(ok_deposit))
+
