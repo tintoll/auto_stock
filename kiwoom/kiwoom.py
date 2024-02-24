@@ -9,6 +9,7 @@ class Kiwoom(QAxWidget):
         ## event loop 모음 ##
         self.login_event_loop = None
         self.detail_account_info_event_loop = None
+        self.detail_account_info_event_loop_2 = None
         ####################
 
         ## 변수 모음 ##
@@ -22,6 +23,7 @@ class Kiwoom(QAxWidget):
         self.signal_login_commConnect()
         self.get_account_info() # 계좌번호 가져오기
         self.detail_account_info() # 예수금 가져오기
+        self.detail_account_mystock() # 계좌평가잔고내역 가져오기
     def get_ocx_instance(self):
         # 키움 OpenAPI+의 OCX 방식을 사용하기 위해서는 OCX의 인스턴스를 얻어와야 합니다.
         # 윈도우 레지스트리에 등록된 ProgID를 사용하여 인스턴스를 얻어옵니다.
@@ -61,6 +63,17 @@ class Kiwoom(QAxWidget):
         self.detail_account_info_event_loop = QEventLoop()
         self.detail_account_info_event_loop.exec_()
 
+    def detail_account_mystock(self, sPrevNext="0"):
+        print("계좌평가잔고내역을 요청하는 부분")
+        self.dynamicCall("SetInputValue(String, String)", "계좌번호", self.account_num)
+        self.dynamicCall("SetInputValue(String, String)", "비밀번호", "0000")
+        self.dynamicCall("SetInputValue(String, String)", "비밀번호입력매체구분", "00")
+        self.dynamicCall("SetInputValue(String, String)", "조회구분", "2")
+        self.dynamicCall("CommRqData(String, String, int, String)", "계좌평가잔고내역요청", "opw00018", sPrevNext, "2000")
+
+        self.detail_account_info_event_loop_2 = QEventLoop()
+        self.detail_account_info_event_loop_2.exec_()
+
     def trdata_slot(self, sScrNo, sRQName, sTrCode, sRecordName, sPrevNext):
         '''
         TR 요청을 받는 구역, 슬롯이다.
@@ -81,4 +94,13 @@ class Kiwoom(QAxWidget):
             print("출금가능금액 형변환 %s" % int(ok_deposit))
 
             self.detail_account_info_event_loop.exit()
+        if sRQName == "계좌평가잔고내역요청":
+            total_buy_money = self.dynamicCall("GetCommData(String, String, int, STring)", sTrCode, sRQName, 0, "총매입금액")
+            total_buy_money_result = int(total_buy_money)
+            print("총매입금액 %s" % total_buy_money_result)
 
+            total_profit_loss_rate = self.dynamicCall("GetCommData(String, String, int, STring)", sTrCode, sRQName, 0, "총수익률(%)")
+            total_profit_loss_rate_result = float(total_profit_loss_rate)
+            print("총수익률(%%) %s" % total_profit_loss_rate_result)
+
+            self.detail_account_info_event_loop_2.exit()
