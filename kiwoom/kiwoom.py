@@ -8,6 +8,7 @@ class Kiwoom(QAxWidget):
 
         ## event loop 모음 ##
         self.login_event_loop = None
+        self.detail_account_info_event_loop = None
         ####################
 
         ## 변수 모음 ##
@@ -57,6 +58,9 @@ class Kiwoom(QAxWidget):
         self.dynamicCall("SetInputValue(String, String)", "조회구분", "2")
         self.dynamicCall("CommRqData(String, String, int, String)", "예수금상세현황요청", "opw00001", "0", "2000")
 
+        self.detail_account_info_event_loop = QEventLoop()
+        self.detail_account_info_event_loop.exec_()
+
     def trdata_slot(self, sScrNo, sRQName, sTrCode, sRecordName, sPrevNext):
         '''
         TR 요청을 받는 구역, 슬롯이다.
@@ -75,4 +79,6 @@ class Kiwoom(QAxWidget):
             ok_deposit = self.dynamicCall("GetCommData(String, String, int, STring)", sTrCode, sRQName, 0, "출금가능금액")
             print("출금가능금액 %s" % ok_deposit)
             print("출금가능금액 형변환 %s" % int(ok_deposit))
+
+            self.detail_account_info_event_loop.exit()
 
