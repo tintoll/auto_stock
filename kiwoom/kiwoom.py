@@ -13,6 +13,7 @@ class Kiwoom(QAxWidget):
 
         ## 스크린 번호 모음 ##
         self.screen_my_info = "2000"
+        self.screen_calculation_stock = "4000"
         ####################
 
         ## 변수 모음 ##
@@ -215,3 +216,12 @@ class Kiwoom(QAxWidget):
                 print("미체결 종목 %s" % self.not_account_stock_dict[order_no])
 
             self.detail_account_info_event_loop.exit()
+
+    def day_kiwoom_db(self, code=None, date=None, sPrevNext="0"):
+        self.dynamicCall("SetInputValue(QString, QString)", "종목코드", code)
+        self.dynamicCall("SetInputValue(QString, QString)", "수정주가구분", "1")
+        if date != None:
+            self.dynamicCall("SetInputValue(QString, QString)", "기준일자", date)
+
+        self.dynamicCall("CommRqData(QString, QString, int, QString)", "주식일봉차트조회", "opt10081", sPrevNext, self.screen_calculation_stock)
+        self.detail_account_info_event_loop.exec_()
