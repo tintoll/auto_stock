@@ -1,6 +1,7 @@
 from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
 from config.errorCode import *
+from PyQt5.QtTest import *
 class Kiwoom(QAxWidget):
     def __init__(self):
         super().__init__()
@@ -9,6 +10,7 @@ class Kiwoom(QAxWidget):
         ## event loop 모음 ##
         self.login_event_loop = None
         self.detail_account_info_event_loop = QEventLoop()
+        self.calculator_event_loop = QEventLoop()
         ####################
 
         ## 스크린 번호 모음 ##
@@ -34,6 +36,8 @@ class Kiwoom(QAxWidget):
         self.detail_account_info() # 예수금 가져오기
         self.detail_account_mystock() # 계좌평가잔고내역 가져오기
         self.not_concluded_account() # 미체결 요청
+
+        self.calculator_fnc() # 종목 분석용, 임시용으로 실행
 
     def get_ocx_instance(self):
         # 키움 OpenAPI+의 OCX 방식을 사용하기 위해서는 OCX의 인스턴스를 얻어와야 합니다.
@@ -216,12 +220,55 @@ class Kiwoom(QAxWidget):
                 print("미체결 종목 %s" % self.not_account_stock_dict[order_no])
 
             self.detail_account_info_event_loop.exit()
+        elif "주식일봉차트조회" == sRQName:
+            code = self.dynamicCall("GetCommData(QString, QString, int, QString)", sTrCode, sRQName, 0, "종목코드")
+            code = code.strip() # 앞뒤 공백 제거, 앞에 공백이 엄청많음
+            print("%s 일봉 데이터 요청" % code)
+
+            rows = self.dynamicCall("GetRepeatCnt(QString, QString)", sTrCode, sRQName)
+            print("데이터 일수 %s" % rows)
+
+            # 일봉의 데이터 한번에 600개까지만 가져올수 있다.
+            if sPrevNext == "2":
+                self.day_kiwoom_db(code=code, sPrevNext=sPrevNext)
+            else:
+                self.calculator_event_loop.exit()
+
+    def get_code_list_by_market(self, market_code):
+        '''
+        종목코드들을 반환
+        :param market_code:
+        :return:
+        '''
+
+        code_list = self.dynamicCall("GetCodeListByMarket(QString)", market_code)
+        code_list = code_list.split(';')[:-1] # 마지막은 공백이라서 제거
+        return code_list
+
+    def calculator_fnc(self):
+        '''
+        종목 분석 실행용 함수
+        :return:
+        '''
+        code_list = self.get_code_list_by_market("10") # 코스닥
+        print("코스닥 갯수 %s" % len(code_list))
+
+        for idx, code in enumerate(code_list):
+            # 스크린번호에 대한 연결을 끊어준다.
+            # 스크린번호를 한번이라도 요청하면 그룹이 만들어진다.
+            self.dynamicCall("DisconnectRealData(QString)", self.screen_calculation_stock)
+            print("%s / %s : Kosdaq Stock Code : %s is updating..." % (idx+1, len(code_list), code))
+            self.day_kiwoom_db(code=code)
+
 
     def day_kiwoom_db(self, code=None, date=None, sPrevNext="0"):
+        # 한번에 많은 요청이 들어가면 서버에서 막아버린다. 그래서 지연을 준다. 3.6초 정도 지연을 준다.
+        QTest.qWait(3600)
+
         self.dynamicCall("SetInputValue(QString, QString)", "종목코드", code)
         self.dynamicCall("SetInputValue(QString, QString)", "수정주가구분", "1")
         if date != None:
             self.dynamicCall("SetInputValue(QString, QString)", "기준일자", date)
 
         self.dynamicCall("CommRqData(QString, QString, int, QString)", "주식일봉차트조회", "opt10081", sPrevNext, self.screen_calculation_stock)
-        self.detail_account_info_event_loop.exec_()
+        self.calculator_event_loop.exec_()
