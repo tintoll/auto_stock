@@ -462,5 +462,44 @@ class Kiwoom(QAxWidget):
             elif value == "4":
                 print("3시30분 장 종료")
         elif sRealType == "주식체결":
-            print(sCode)
+            a = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['체결시간']) # HHMMSS
+            b = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['현재가']) # +(-)2520
+            b = abs(int(b))
+            c = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['전일대비'])
+            c = abs(int(c))
+            d = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['등락율'])
+            d = float(d)
+            e = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['(최우선)매도호가'])
+            e = abs(int(e))
+            f = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['(최우선)매수호가'])
+            f = abs(int(f))
+            # 틱봉에 대한 거래량이다.
+            g = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['거래량'])
+            g = abs(int(g))
+            h = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['누적거래량'])
+            h = abs(int(h))
+            i = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['고가'])
+            i = abs(int(i))
+            j = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['시가'])
+            j = abs(int(j))
+            k = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['저가'])
+            k = abs(int(k))
 
+            if sCode not in self.portfolio_stock_dict:
+                self.portfolio_stock_dict.update({sCode: {}})
+
+            self.portfolio_stock_dict[sCode].update({"체결시간": a})
+            self.portfolio_stock_dict[sCode].update({"현재가": b})
+            self.portfolio_stock_dict[sCode].update({"전일대비": c})
+            self.portfolio_stock_dict[sCode].update({"등락율": d})
+            self.portfolio_stock_dict[sCode].update({"(최우선)매도호가": e})
+            self.portfolio_stock_dict[sCode].update({"(최우선)매수호가": f})
+            self.portfolio_stock_dict[sCode].update({"거래량": g})
+            self.portfolio_stock_dict[sCode].update({"누적거래량": h})
+            self.portfolio_stock_dict[sCode].update({"고가": i})
+            self.portfolio_stock_dict[sCode].update({"시가": j})
+            self.portfolio_stock_dict[sCode].update({"저가": k})
+
+            print(self.portfolio_stock_dict[sCode]) # 실시간으로 받은 데이터를 출력
+
+            ## 실시간 조건 검색 추가 
