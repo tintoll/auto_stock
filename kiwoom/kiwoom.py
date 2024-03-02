@@ -1,4 +1,5 @@
 import os
+import sys
 
 from PyQt5.QAxContainer import *
 from PyQt5.QtCore import *
@@ -79,6 +80,8 @@ class Kiwoom(QAxWidget):
         self.OnEventConnect.connect(self.login_slot)
         # 예수금 요청 이벤트 연결
         self.OnReceiveTrData.connect(self.trdata_slot)
+
+        self.OnReceiveMsg.connect(self.msg_slot)
     def real_event_slots(self):
         self.OnReceiveRealData.connect(self.realdata_slot)
         # 주문에 대한 이벤트
@@ -465,6 +468,17 @@ class Kiwoom(QAxWidget):
                 print("장 종료, 동시호가로 넘어감")
             elif value == "4":
                 print("3시30분 장 종료")
+
+                for code in self.portfolio_stock_dict.keys():
+                    self.dynamicCall("SetRealRemove(QString, QString)", self.portfolio_stock_dict[code]["스크린번호"], code)
+
+                # 장종료후 파일 삭제후 다시 분석을 해준다.
+                self.file_delete()
+                self.calculator_fnc()
+
+                # 프로그램 종료
+                sys.exit()
+
         elif sRealType == "주식체결":
             a = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['체결시간']) # HHMMSS
             b = self.dynamicCall("GetCommRealData(QString, int)", sCode, self.realType.REALTYPE[sRealType]['현재가']) # +(-)2520
@@ -701,3 +715,12 @@ class Kiwoom(QAxWidget):
             if stock_quan == 0:
                 del self.jango_dict[sCode]
                 self.dynamicCall("SetRealRemove(QString, QString)", self.portfolio_stock_dict[sCode]["스크린번호"], sCode)
+
+    # 송수신 메시지 get
+    def msg_slot(self, sScrNo, sRQName, sTrCode, msg):
+        print("스크린 : %s, 요청이름 : %s, tr코드 : %s --- %s" % (sScrNo, sRQName, sTrCode, msg))
+
+    # 파일 삭제
+    def file_delete(self):
+        if os.path.isfile("files/condition_stock.txt"):
+            os.remove("files/condition_stock.txt")
