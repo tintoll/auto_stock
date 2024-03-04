@@ -522,7 +522,9 @@ class Kiwoom(QAxWidget):
 
             ## 실시간 조건 검색 추가
             # 계좌잔고평가내역에 있고 오늘 산 잔고에는 없을 경우
-            if sCode in self.account_stock_dict.key() and sCode not in self.jango_dict.keys():
+            # print(self.account_stock_dict)
+            print(self.jango_dict)
+            if sCode in self.account_stock_dict and sCode not in self.jango_dict:
                 asd = self.account_stock_dict[sCode]
 
                 # 현재가에 매입가를 빼고 매입가에 대한 등락률을 구한다.
@@ -545,7 +547,7 @@ class Kiwoom(QAxWidget):
                         print("매도주문 전달 실패")
             
             # 오늘 산 잔고에 있을 경우 
-            elif sCode in self.jango_dict.key():
+            elif sCode in self.jango_dict:
                 print("%s %s" % ("신규 매도를 한다 2.", sCode))
                 jd = self.jango_dict[sCode]
                 meme_rate = (b - jd["매입단가"]) / jd["매입단가"] * 100
@@ -563,7 +565,7 @@ class Kiwoom(QAxWidget):
                         print("매도주문 전달 실패")
 
             # 등락률이 2.0% 이상이고 오늘 산 잔고에 없을 경우
-            elif d > 2.0 and sCode not in self.jango_dict.key():
+            elif d > 2.0 and sCode not in self.jango_dict:
                 print("%s %s" % ("신규 매수를 한다.", sCode))
 
                 result = (self.use_money * 0.1) / e
@@ -686,7 +688,7 @@ class Kiwoom(QAxWidget):
             stock_quan = int(stock_quan)
             like_quan = self.dynamicCall("GetChejanData(int)", self.realType.REALTYPE["잔고"]["주문가능수량"])
             like_quan = int(like_quan)
-            buy_price = self.dynamicCall("GetChejanData(int)", self.realType.REALTYPE["잔고"]["매입가"])
+            buy_price = self.dynamicCall("GetChejanData(int)", self.realType.REALTYPE["잔고"]["매입단가"])
             buy_price = abs(int(buy_price))
             total_buy_price = self.dynamicCall("GetChejanData(int)", self.realType.REALTYPE["잔고"]["총매입가"])
             total_buy_price = abs(int(total_buy_price))
