@@ -1,5 +1,7 @@
 import requests
 from bs4 import BeautifulSoup
+import time
+from selenium import webdriver
 
 
 class Crawler:
@@ -7,25 +9,23 @@ class Crawler:
         pass
 
     def crawling(self, stockCode):
-        url = f"https://finance.naver.com/item/coinfo.naver?code={stockCode}"
-        response = requests.get(url)
-        if response.status_code != 200:
-            print("Failed to retrieve data")
-            return None
-        soup = BeautifulSoup(response.content, 'html.parser')
+
+        # url = f"https://finance.naver.com/item/coinfo.naver?code={stockCode}"
+        chrome_options = webdriver.ChromeOptions()
+        chrome_options.add_argument("--headless")  # 브라우저가 보이지 않도록 설정
+        driver = webdriver.Chrome(options=chrome_options)
+
+        # iframe 안의 주소
+        url = f"https://navercomp.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd={stockCode}"
+        driver.get(url)
+        time.sleep(2)
+
+        # DOM이 다 로드된다음에 html을 가져오기 위해서 selenium을 사용하였음.
+        iframe_soup = BeautifulSoup(driver.page_source, 'html.parser')
         # 종목명 가져오기
         stockInfo = {
             "code" : stockCode
         }
-        # iframe의 src 속성 가져오기
-        iframe_src = soup.find(id="coinfo_cp")['src']
-        iframe_response = requests.get(iframe_src)
-        if iframe_response.status_code != 200:
-            print("Failed to retrieve iframe content")
-            return None
-
-        iframe_soup = BeautifulSoup(iframe_response.content, 'html.parser')
-
         company_name = iframe_soup.select_one('td.cmp-table-cell.td0101 span.name').text.strip()
         stockInfo['company_name'] = company_name
 
@@ -39,26 +39,20 @@ class Crawler:
                 stockInfo['per'] = info.select_one('b').text.strip()
             elif i == 4:
                 stockInfo['pbr'] = info.select_one('b').text.strip()
+        tableTargetElement  = iframe_soup.find(id="cTB00")
+        next_element = tableTargetElement.find_next_sibling()
+        if not next_element:
+            print("Element with ID QmZIZ20rMn not found")
+            return None
 
-        print(stockInfo)
+        tables = next_element.find_all('table')
+        if tables:
+            last_table = tables[-1]
+            print(last_table)
 
-        # 
 
-        # 분석 데이터 가져오기
-        # analysis_data = {}
-        # table = soup.find('table', {'class': 'gHead'})
-        # if table:
-        #     rows = table.find_all('tr')
-        #     for row in rows:
-        #         cols = row.find_all('td')
-        #         if len(cols) == 2:
-        #             key = cols[0].text.strip()
-        #             value = cols[1].text.strip()
-        #             analysis_data[key] = value
-        #
-        # # 결과 출력
-        # for key, value in analysis_data.items():
-        #     print(key + ':', value)
+
+
 
 if __name__ == "__main__":
     stock_code = '005930'  # 삼성전자 종목코드
