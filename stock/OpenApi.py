@@ -5,6 +5,9 @@ from PyQt5.QtCore import QEventLoop
 
 from config.errorCode import errors
 from stock import MyLogger
+from stock.Crawler import crawling
+import pandas as pd
+from datetime import datetime
 
 logger = MyLogger.logger
 
@@ -23,6 +26,18 @@ class OpenApi(QAxWidget):
         self.login()
         # 종목 코드 가져오기
         all_code_list = self.getStockCodeList() # [000020,00000, ...]
+        stockInfoList = []
+        for stockCode in all_code_list[:5]:
+            stockInfo = crawling(stockCode)
+            logger.info(stockInfo)
+            stockInfoList.append(stockInfo)
+
+        # DataFrame 생성
+        df = pd.DataFrame(stockInfoList)
+        # Excel 파일로 저장
+        excel_file = f'주식종목_{datetime.now().strftime("%Y%m%d")}.xlsx'
+        df.to_excel(excel_file, index=False)
+        logger.info(f'{excel_file} 파일 저장 완료')
 
 
 
