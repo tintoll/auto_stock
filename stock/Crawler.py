@@ -20,10 +20,15 @@ def crawling(stockCode):
     iframe_soup = BeautifulSoup(driver.page_source, 'html.parser')
     # 종목명 가져오기
     stockInfo = {
-        "code": stockCode
+       "code": stockCode
     }
-    company_name = iframe_soup.select_one('td.cmp-table-cell.td0101 span.name').text.strip()
-    stockInfo['company_name'] = company_name
+
+    # 시가총액 가겨오기
+    summaryElement = iframe_soup.find(id="cTB11")
+    if summaryElement:
+        stockInfo['시가총액'] = int(summaryElement.find_all('tr')[4].find('td').get_text().strip().replace(',', '').replace('억원', '')+ '00000000')
+    else:
+        logger.info("시가총액 파싱 실패")
 
     tableTargetElement = iframe_soup.find(id="cTB00")
     next_element = tableTargetElement.find_next_sibling()

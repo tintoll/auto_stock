@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from PyQt5.QAxContainer import QAxWidget
 from PyQt5.QtCore import QEventLoop
@@ -27,11 +28,12 @@ class OpenApi(QAxWidget):
         # 종목 코드 가져오기
         all_code_list = self.getStockCodeList() # [000020,00000, ...]
         stockInfoList = []
-        for stockCode in all_code_list[:5]:
-            stockInfo = crawling(stockCode)
-            logger.info(stockInfo)
-            stockInfoList.append(stockInfo)
-
+        for stockCode in all_code_list[:20]:
+            stockInfo = self.makeStockInfo(stockCode)
+            # 필터 조건
+            if not (stockInfo['codeName'].endswith(('우', '우B')) and
+                    stockInfo['construction'] not in ['거래정지', '관리종목', '투자주의환기종목']) :
+                stockInfoList.append(stockInfo)
         # DataFrame 생성
         df = pd.DataFrame(stockInfoList)
         # Excel 파일로 저장
@@ -39,7 +41,22 @@ class OpenApi(QAxWidget):
         df.to_excel(excel_file, index=False)
         logger.info(f'{excel_file} 파일 저장 완료')
 
+        sys.exit(0)
 
+    def makeStockInfo(self, stockCode):
+        stockInfo = {
+            "code": stockCode,
+        }
+        code_name = self.dynamicCall("GetMasterCodeName(QString)", stockCode)
+        construction = self.dynamicCall("GetMasterConstruction(QString)", stockCode)
+        stockInfo['codeName'] = code_name
+        stockInfo['construction'] = construction
+
+        advanceInfo = crawling(stockCode)
+        if advanceInfo:
+            stockInfo.update(advanceInfo)
+
+        return stockInfo
 
     def getStockCodeList(self):
         kospi_code_list = self.dynamicCall("GetCodeListByMarket(QString)", "0")
