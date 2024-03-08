@@ -33,7 +33,11 @@ class OpenApi(QAxWidget):
             # 필터 조건
             if not (stockInfo['codeName'].endswith(('우', '우B')) and
                     stockInfo['construction'] not in ['거래정지', '관리종목', '투자주의환기종목']) :
+                # 현재가치
+                currentTotalPrice = stockInfo['자본금'] * ((float(stockInfo['자본유보율']) - float(stockInfo['부채비율'])) / 100)
+                stockInfo['currentTotalPrice'] = currentTotalPrice
                 stockInfoList.append(stockInfo)
+
         # DataFrame 생성
         df = pd.DataFrame(stockInfoList)
         # Excel 파일로 저장
