@@ -5,11 +5,12 @@ from selenium import webdriver
 from stock import MyLogger
 
 logger = MyLogger.logger
+
+chrome_options = webdriver.ChromeOptions()
+chrome_options.add_argument("--headless")  # 브라우저가 보이지 않도록 설정
+driver = webdriver.Chrome(options=chrome_options)
 def crawling(stockCode):
     # url = f"https://finance.naver.com/item/coinfo.naver?code={stockCode}"
-    chrome_options = webdriver.ChromeOptions()
-    chrome_options.add_argument("--headless")  # 브라우저가 보이지 않도록 설정
-    driver = webdriver.Chrome(options=chrome_options)
 
     # iframe 안의 주소
     url = f"https://navercomp.wisereport.co.kr/v2/company/c1010001.aspx?cmp_cd={stockCode}"
@@ -25,10 +26,14 @@ def crawling(stockCode):
 
     # 시가총액 가겨오기
     summaryElement = iframe_soup.find(id="cTB11")
-    if summaryElement:
-        stockInfo['시가총액'] = int(summaryElement.find_all('tr')[4].find('td').get_text().strip().replace(',', '').replace('억원', '')+ '00000000')
-    else:
+    try:
+        if summaryElement:
+            stockInfo['시가총액'] = int(summaryElement.find_all('tr')[4].find('td').get_text().strip().replace(',', '').replace('억원', '')+ '00000000')
+        else:
+            logger.info("시가총액 파싱 실패")
+    except:
         logger.info("시가총액 파싱 실패")
+        return None
 
     tableTargetElement = iframe_soup.find(id="cTB00")
     next_element = tableTargetElement.find_next_sibling()
